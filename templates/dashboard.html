@@ -1,3 +1,8 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2>Заявки</h2>
+
 {% if session.is_admin %}
 <h3>Фильтр:</h3>
 <form method="GET" action="{{ url_for('dashboard') }}">
@@ -35,19 +40,29 @@
 </form>
 <hr>
 {% endif %}
-{% extends "base.html" %}
-{% block content %}
-<h2>Заявки</h2>
 
 {% if tickets %}
     <ul>
     {% for t in tickets %}
-        <li style="margin-bottom:15px;">
-            <strong>{{ t.title }}</strong> | Статус: {{ t.status }} | Срочность: {{ t.urgency }} | Тип: {{ t.type }}<br>
+        <li style="margin-bottom:20px; padding:10px; background:#fff; border:1px solid #ccc;">
+
+            <strong>{{ t.title }}</strong> |
+            <span class="
+                {% if t.status == 'новая' %}status-new{% elif t.status == 'в работе' %}status-work{% elif t.status == 'решена' %}status-done{% endif %}">
+                {{ t.status }}
+            </span> |
+            {{ t.urgency }} | {{ t.type }}<br>
+
             <em>Описание:</em> {{ t.description }}<br>
 
+            {% if t.assigned_to %}
+                <strong>Исполнитель:</strong> {{ t.assigned_to }}<br>
+            {% else %}
+                <strong>Исполнитель:</strong> не назначен<br>
+            {% endif %}
+
             {% if session.is_admin %}
-                <form method="POST" action="{{ url_for('update_ticket', ticket_id=t.id) }}">
+                <form method="POST" action="{{ url_for('update_ticket', ticket_id=t.id) }}" style="margin-top:10px;">
                     <label>Статус:</label>
                     <select name="status">
                         <option value="новая" {% if t.status == 'новая' %}selected{% endif %}>Новая</option>
@@ -60,7 +75,24 @@
 
                     <button type="submit">Обновить</button>
                 </form>
+
+                <form method="POST" action="{{ url_for('add_comment', ticket_id=t.id) }}" style="margin-top:10px;">
+                    <input type="text" name="text" placeholder="Добавить комментарий" required>
+                    <button type="submit">ОК</button>
+                </form>
             {% endif %}
+
+            {% set ticket_comments = comments.get(t.id, []) %}
+
+            {% if ticket_comments %}
+                <p><strong>Комментарии:</strong></p>
+                <ul>
+                {% for c in ticket_comments %}
+                    <li>{{ c.created_at.strftime('%Y-%m-%d %H:%M') }} | {{ c.user_email }}: {{ c.text }}</li>
+                {% endfor %}
+                </ul>
+            {% endif %}
+
         </li>
     {% endfor %}
     </ul>

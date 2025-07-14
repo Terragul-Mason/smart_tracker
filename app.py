@@ -3,12 +3,11 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
-from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
-# Подключение к PostgreSQL (Поменяй пароль под свой!)
+# Подключение к PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/smart_tracker'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
@@ -36,6 +35,14 @@ class Ticket(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     assigned_to = db.Column(db.String(100))
+
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
+    user_email = db.Column(db.String(120), nullable=False)
 
 # --- Декоратор авторизации ---
 def login_required(f):
@@ -105,15 +112,20 @@ def dashboard():
         if date_from:
             query = query.filter(Ticket.created_at >= datetime.strptime(date_from, "%Y-%m-%d"))
         if date_to:
-            query = query.filter(Ticket.created_at <= datetime.strptime(date_to, "%Y-%m-%d"))
+            dt_to = datetime.strptime(date_to, "%Y-%m-%d")
+            dt_to = dt_to.replace(hour=23, minute=59, second=59)
+            query = query.filter(Ticket.created_at <= dt_to)
 
         tickets = query.order_by(Ticket.created_at.desc()).all()
     else:
         tickets = Ticket.query.filter_by(user_id=session['user_id']).order_by(Ticket.created_at.desc()).all()
 
-    return render_template('dashboard.html', tickets=tickets)
+    # Собираем комментарии для всех тикетов
+    comments = {}
+    for t in tickets:
+        comments[t.id] = Comment.query.filter_by(ticket_id=t.id).order_by(Comment.created_at).all()
 
-
+    return render_template('dashboard.html', tickets=tickets, comments=comments)
 
 @app.route('/create', methods=['GET', 'POST'])
 @login_required
@@ -141,6 +153,20 @@ def update_ticket(ticket_id):
     ticket.assigned_to = request.form['assigned_to']
     db.session.commit()
     flash('Заявка обновлена')
+    return redirect(url_for('dashboard'))
+
+@app.route('/add_comment/<int:ticket_id>', methods=['POST'])
+@login_required
+def add_comment(ticket_id):
+    if not session.get('is_admin'):
+        flash('Нет доступа')
+        return redirect(url_for('dashboard'))
+
+    text = request.form['text']
+    comment = Comment(text=text, ticket_id=ticket_id, user_email=session['user_email'])
+    db.session.add(comment)
+    db.session.commit()
+    flash('Комментарий добавлен')
     return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':

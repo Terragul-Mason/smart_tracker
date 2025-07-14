@@ -13,3 +13,15 @@ input, textarea, select, button {
 button {
     cursor: pointer;
 }
+
+.status-new {
+    color: gray;
+}
+
+.status-work {
+    color: orange;
+}
+
+.status-done {
+    color: green;
+}
