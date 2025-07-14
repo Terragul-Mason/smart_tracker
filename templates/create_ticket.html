@@ -1,19 +1,21 @@
 {% extends "base.html" %}
 {% block content %}
 <h2>Создать заявку</h2>
-<form method="POST">
-    <input type="text" name="title" placeholder="Заголовок" required><br><br>
-    <textarea name="description" placeholder="Описание" required></textarea><br><br>
+<form method="POST" style="max-width:500px;">
+    <input type="text" name="title" placeholder="Заголовок" required><br>
+    <textarea name="description" placeholder="Описание" required></textarea><br>
+    <label>Тип:</label><br>
     <select name="type">
         <option value="ПО">ПО</option>
         <option value="Железо">Железо</option>
         <option value="Сеть">Сеть</option>
-    </select><br><br>
+    </select><br>
+    <label>Срочность:</label><br>
     <select name="urgency">
         <option value="низкая">Низкая (можно подождать)</option>
         <option value="средняя">Средняя (желательно быстрее)</option>
         <option value="высокая">Высокая (критично)</option>
-    </select>
+    </select><br>
     <button type="submit">Создать</button>
 </form>
 {% endblock %}

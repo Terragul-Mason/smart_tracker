@@ -8,20 +8,20 @@
 <body>
     <h1>Smart Task Tracker</h1>
     {% if session.user_id %}
-    <p>
-        <a href="{{ url_for('dashboard') }}">Заявки</a>
-        {% if not session.is_admin %}
-            | <a href="{{ url_for('create_ticket') }}">Создать заявку</a>
-        {% endif %}
-        | <a href="{{ url_for('logout') }}">Выйти</a>
-    </p>
-{% endif %}
+        <p>
+            <a href="{{ url_for('dashboard') }}">Заявки</a>
+            {% if not session.is_admin %}
+                | <a href="{{ url_for('create_ticket') }}">Создать заявку</a>
+            {% endif %}
+            | <a href="{{ url_for('logout') }}">Выйти</a>
+        </p>
+    {% endif %}
     <hr>
     {% with messages = get_flashed_messages() %}
         {% if messages %}
             <ul>
             {% for msg in messages %}
-                <li>{{ msg }}</li>
+                <li style="color: #c0392b;">{{ msg }}</li>
             {% endfor %}
             </ul>
         {% endif %}
