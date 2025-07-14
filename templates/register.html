@@ -1,10 +1,12 @@
 {% extends "base.html" %}
 {% block content %}
-<h2>Регистрация</h2>
-<form method="POST" style="max-width:400px;">
-    <input type="email" name="email" placeholder="Email" required><br>
-    <input type="password" name="password" placeholder="Пароль" required><br>
-    <button type="submit">Зарегистрироваться</button>
-</form>
-<p><a href="{{ url_for('login') }}">Уже есть аккаунт? Войти</a></p>
+<div style="max-width: 400px; margin: 50px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center;">
+    <h2>Регистрация</h2>
+    <form method="POST">
+        <input type="email" name="email" placeholder="Email" required><br>
+        <input type="password" name="password" placeholder="Пароль" required><br>
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+    <p><a href="{{ url_for('login') }}">Уже есть аккаунт? Войти</a></p>
+</div>
 {% endblock %}
