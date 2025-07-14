@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Smart Tracker</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Smart Task Tracker</h1>
+    {% if session.user_id %}
+        <p>
+            <a href="{{ url_for('dashboard') }}">Заявки</a> |
+            <a href="{{ url_for('create_ticket') }}">Создать заявку</a> |
+            <a href="{{ url_for('logout') }}">Выйти</a>
+        </p>
+    {% endif %}
+    <hr>
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <ul>
+            {% for msg in messages %}
+                <li>{{ msg }}</li>
+            {% endfor %}
+            </ul>
+        {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+</body>
+</html>

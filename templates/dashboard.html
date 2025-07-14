@@ -1,0 +1,65 @@
+{% if session.is_admin %}
+<h3>Фильтр:</h3>
+<form method="GET" action="{{ url_for('dashboard') }}">
+    <label>Тип:</label>
+    <select name="type">
+        <option value="">Все</option>
+        <option value="ПО" {% if request.args.get('type') == 'ПО' %}selected{% endif %}>ПО</option>
+        <option value="Железо" {% if request.args.get('type') == 'Железо' %}selected{% endif %}>Железо</option>
+        <option value="Сеть" {% if request.args.get('type') == 'Сеть' %}selected{% endif %}>Сеть</option>
+    </select>
+
+    <label>Срочность:</label>
+    <select name="urgency">
+        <option value="">Все</option>
+        <option value="низкая" {% if request.args.get('urgency') == 'низкая' %}selected{% endif %}>Низкая</option>
+        <option value="средняя" {% if request.args.get('urgency') == 'средняя' %}selected{% endif %}>Средняя</option>
+        <option value="высокая" {% if request.args.get('urgency') == 'высокая' %}selected{% endif %}>Высокая</option>
+    </select>
+
+    <label>Статус:</label>
+    <select name="status">
+        <option value="">Все</option>
+        <option value="новая" {% if request.args.get('status') == 'новая' %}selected{% endif %}>Новая</option>
+        <option value="в работе" {% if request.args.get('status') == 'в работе' %}selected{% endif %}>В работе</option>
+        <option value="решена" {% if request.args.get('status') == 'решена' %}selected{% endif %}>Решена</option>
+    </select>
+
+    <button type="submit">Показать</button>
+</form>
+<hr>
+{% endif %}
+{% extends "base.html" %}
+{% block content %}
+<h2>Заявки</h2>
+
+{% if tickets %}
+    <ul>
+    {% for t in tickets %}
+        <li style="margin-bottom:15px;">
+            <strong>{{ t.title }}</strong> | Статус: {{ t.status }} | Срочность: {{ t.urgency }} | Тип: {{ t.type }}<br>
+            <em>Описание:</em> {{ t.description }}<br>
+
+            {% if session.is_admin %}
+                <form method="POST" action="{{ url_for('update_ticket', ticket_id=t.id) }}">
+                    <label>Статус:</label>
+                    <select name="status">
+                        <option value="новая" {% if t.status == 'новая' %}selected{% endif %}>Новая</option>
+                        <option value="в работе" {% if t.status == 'в работе' %}selected{% endif %}>В работе</option>
+                        <option value="решена" {% if t.status == 'решена' %}selected{% endif %}>Решена</option>
+                    </select><br>
+
+                    <label>Исполнитель:</label>
+                    <input type="text" name="assigned_to" value="{{ t.assigned_to or '' }}"><br>
+
+                    <button type="submit">Обновить</button>
+                </form>
+            {% endif %}
+        </li>
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>Заявок пока нет.</p>
+{% endif %}
+
+{% endblock %}
