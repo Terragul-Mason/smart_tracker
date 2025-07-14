@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
 from functools import wraps
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -89,10 +90,11 @@ def dashboard():
     query = Ticket.query
 
     if session.get('is_admin'):
-        # Фильтрация для админа
         type_filter = request.args.get('type')
         urgency_filter = request.args.get('urgency')
         status_filter = request.args.get('status')
+        date_from = request.args.get('date_from')
+        date_to = request.args.get('date_to')
 
         if type_filter:
             query = query.filter_by(type=type_filter)
@@ -100,12 +102,17 @@ def dashboard():
             query = query.filter_by(urgency=urgency_filter)
         if status_filter:
             query = query.filter_by(status=status_filter)
+        if date_from:
+            query = query.filter(Ticket.created_at >= datetime.strptime(date_from, "%Y-%m-%d"))
+        if date_to:
+            query = query.filter(Ticket.created_at <= datetime.strptime(date_to, "%Y-%m-%d"))
 
         tickets = query.order_by(Ticket.created_at.desc()).all()
     else:
         tickets = Ticket.query.filter_by(user_id=session['user_id']).order_by(Ticket.created_at.desc()).all()
 
     return render_template('dashboard.html', tickets=tickets)
+
 
 
 @app.route('/create', methods=['GET', 'POST'])
