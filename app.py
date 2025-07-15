@@ -7,16 +7,13 @@ from functools import wraps
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
 
-# Подключение к PostgreSQL
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/smart_tracker'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-# Админы задаются в коде
 ADMINS = ['admin@tracker.local']
 
-# --- Модели ---
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
@@ -44,7 +41,6 @@ class Comment(db.Model):
     ticket_id = db.Column(db.Integer, db.ForeignKey('ticket.id'), nullable=False)
     user_email = db.Column(db.String(120), nullable=False)
 
-# --- Декоратор авторизации ---
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
@@ -53,7 +49,6 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# --- Роуты ---
 @app.route('/')
 def index():
     return redirect(url_for('dashboard'))
@@ -120,7 +115,6 @@ def dashboard():
     else:
         tickets = Ticket.query.filter_by(user_id=session['user_id']).order_by(Ticket.created_at.desc()).all()
 
-    # Собираем комментарии для всех тикетов
     comments = {}
     for t in tickets:
         comments[t.id] = Comment.query.filter_by(ticket_id=t.id).order_by(Comment.created_at).all()
