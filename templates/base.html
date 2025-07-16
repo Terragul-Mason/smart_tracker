@@ -9,9 +9,12 @@
     <h1>Smart Task Tracker</h1>
     {% if session.user_id %}
         <p>
-            <a href="{{ url_for('dashboard') }}">Заявки</a>
+            <a href="{{ url_for('dashboard') }}">Панель заявок</a>
             {% if not session.is_admin %}
                 | <a href="{{ url_for('create_ticket') }}">Создать заявку</a>
+            {% endif %}
+            {% if session.is_superadmin %}
+                | <a href="{{ url_for('manage_admins') }}">Управление админами</a>
             {% endif %}
             | <a href="{{ url_for('logout') }}">Выйти</a>
         </p>

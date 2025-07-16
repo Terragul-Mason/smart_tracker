@@ -12,14 +12,14 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
-ADMINS = ['admin@tracker.local']
+SUPER_ADMINS = ['admin@tracker.local']
 
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(128), nullable=False)
-    tickets = db.relationship('Ticket', backref='author', lazy=True)
+    is_admin = db.Column(db.Boolean, default=False)
 
 class Ticket(db.Model):
     __tablename__ = 'ticket'
@@ -76,7 +76,8 @@ def login():
         if user and check_password_hash(user.password, request.form['password']):
             session['user_id'] = user.id
             session['user_email'] = user.email
-            session['is_admin'] = email in ADMINS
+            session['is_admin'] = user.is_admin or (email in SUPER_ADMINS)
+            session['is_superadmin'] = email in SUPER_ADMINS
             return redirect(url_for('dashboard'))
         flash('Неверный логин или пароль')
     return render_template('login.html')
@@ -91,7 +92,7 @@ def logout():
 def dashboard():
     query = Ticket.query
 
-    if session.get('is_admin'):
+    if session.get('is_admin') or session.get('is_superadmin'):
         type_filter = request.args.get('type')
         urgency_filter = request.args.get('urgency')
         status_filter = request.args.get('status')
@@ -107,9 +108,7 @@ def dashboard():
         if date_from:
             query = query.filter(Ticket.created_at >= datetime.strptime(date_from, "%Y-%m-%d"))
         if date_to:
-            dt_to = datetime.strptime(date_to, "%Y-%m-%d")
-            dt_to = dt_to.replace(hour=23, minute=59, second=59)
-            query = query.filter(Ticket.created_at <= dt_to)
+            query = query.filter(Ticket.created_at <= datetime.strptime(date_to, "%Y-%m-%d"))
 
         tickets = query.order_by(Ticket.created_at.desc()).all()
     else:
@@ -117,7 +116,8 @@ def dashboard():
 
     comments = {}
     for t in tickets:
-        comments[t.id] = Comment.query.filter_by(ticket_id=t.id).order_by(Comment.created_at).all()
+        c = Comment.query.filter_by(ticket_id=t.id).order_by(Comment.created_at.asc()).all()
+        comments[t.id] = c
 
     return render_template('dashboard.html', tickets=tickets, comments=comments)
 
@@ -138,7 +138,7 @@ def create_ticket():
 @app.route('/update_ticket/<int:ticket_id>', methods=['POST'])
 @login_required
 def update_ticket(ticket_id):
-    if not session.get('is_admin'):
+    if not (session.get('is_admin') or session.get('is_superadmin')):
         flash('Нет доступа')
         return redirect(url_for('dashboard'))
 
@@ -152,7 +152,7 @@ def update_ticket(ticket_id):
 @app.route('/add_comment/<int:ticket_id>', methods=['POST'])
 @login_required
 def add_comment(ticket_id):
-    if not session.get('is_admin'):
+    if not (session.get('is_admin') or session.get('is_superadmin')):
         flash('Нет доступа')
         return redirect(url_for('dashboard'))
 
@@ -162,6 +162,25 @@ def add_comment(ticket_id):
     db.session.commit()
     flash('Комментарий добавлен')
     return redirect(url_for('dashboard'))
+
+@app.route('/manage_admins', methods=['GET', 'POST'])
+@login_required
+def manage_admins():
+    if not session.get('is_superadmin'):
+        flash('Нет доступа')
+        return redirect(url_for('dashboard'))
+
+    users = User.query.filter(User.email.notin_(SUPER_ADMINS)).all()
+
+    if request.method == 'POST':
+        for user in users:
+            checkbox = request.form.get(f'admin_{user.id}')
+            user.is_admin = bool(checkbox)
+        db.session.commit()
+        flash('Роли обновлены')
+        return redirect(url_for('manage_admins'))
+
+    return render_template('manage_admins.html', users=users)
 
 if __name__ == '__main__':
     app.run(debug=True)
